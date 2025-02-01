@@ -1,0 +1,84 @@
+cmake_minimum_required(VERSION 3.12)
+
+if(TARGET cpp-math)
+  return()
+endif()
+
+project(cpp-math
+  VERSION 0.1.0
+)
+
+option(BUILD_${PROJECT_NAME}_TEST_EXECUTABLE "Build test executable?" OFF)
+
+find_package(QT NAMES Qt5 COMPONENTS Widgets Core Qml QuickControls2)
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets Core Qml QuickControls2)
+
+if (BUILD_${PROJECT_NAME}_TEST_EXECUTABLE)
+  find_package(Catch2 REQUIRED)
+endif()
+
+add_library(${PROJECT_NAME})
+add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
+
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra)
+endif()
+
+set_target_properties(${PROJECT_NAME} PROPERTIES
+  CXX_STANDARD 20
+  CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF
+  POSITION_INDEPENDENT_CODE ON
+)
+
+target_sources(${PROJECT_NAME}
+  PRIVATE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/${PROJECT_NAME}/cpp_math.cc>
+  $<INSTALL_INTERFACE:src/${PROJECT_NAME}/cpp_math.cc>
+)
+
+target_include_directories(${PROJECT_NAME}
+  PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+
+  PRIVATE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/${PROJECT_NAME}>
+  $<INSTALL_INTERFACE:src/${PROJECT_NAME}>
+)
+
+# === TESTS ===
+if(BUILD_${PROJECT_NAME}_TEST_EXECUTABLE)
+  target_compile_definitions(${PROJECT_NAME} PRIVATE BUILD_TEST_EXECUTABLE)
+  add_subdirectory(tests)
+endif()
+
+# === INSTALL ===
+set(PROJECT_NAMESPACE ${PROJECT_NAME}::)
+message(STATUS "[${PROJECT_NAME}] installing ${PROJECT_NAME} in namespace ${PROJECT_NAMESPACE}")
+include(GNUInstallDirs)
+include(GenerateExportHeader)
+include(CMakePackageConfigHelpers)
+message(STATUS "[${PROJECT_NAME}] installing in prefix: ${CMAKE_INSTALL_PREFIX}")
+
+set(PROJECT_CONFIG_FILE_IN "${CMAKE_CURRENT_SOURCE_DIR}/cmake_install/${PROJECT_NAME}-config.cmake.in")
+set(PROJECT_CONFIG_FILE "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake")
+set(CONFIG_TARGETS_FILE "${PROJECT_NAME}-config-targets.cmake")
+set(CONFIG_VERSION_FILE "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake")
+set(INSTALL_EXPORT_DESTINATION_DIR "${CMAKE_INSTALL_LIBDIR}/cmake_install/${PROJECT_NAME}")
+
+install(TARGETS ${PROJECT_NAME}
+  EXPORT ${PROJECT_NAME}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+install(DIRECTORY $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/public/${PROJECT_NAME}> $<INSTALL_INTERFACE:include/public/${PROJECT_NAME}> ; DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+configure_package_config_file(${PROJECT_CONFIG_FILE_IN} ${PROJECT_CONFIG_FILE} INSTALL_DESTINATION ${INSTALL_EXPORT_DESTINATION_DIR})
+write_basic_package_version_file(${CONFIG_VERSION_FILE} COMPATIBILITY AnyNewerVersion)
+install(FILES ${PROJECT_CONFIG_FILE} ${CONFIG_VERSION_FILE} DESTINATION ${INSTALL_EXPORT_DESTINATION_DIR})
+
+message(STATUS "[${PROJECT_NAME}] configuring ${PROJECT_NAME} done_s0!")

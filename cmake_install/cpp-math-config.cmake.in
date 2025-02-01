@@ -1,0 +1,13 @@
+#
+#   заменить PROJECT_NAME на название своей библиотеки
+#
+
+@PACKAGE_INIT@
+
+set(config_targets_file_cpp_math @config_targets_file@)
+
+include(CMakeFindDependencyMacro)
+
+include("${CMAKE_CURRENT_LIST_DIR}/${config_targets_file_cpp_math}")
+
+check_required_components(cpp_math)
