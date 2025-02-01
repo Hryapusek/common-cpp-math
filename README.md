@@ -1,4 +1,5 @@
 # common-cpp-math
+C++14 compatible vectors and heli rotation library
 
 ## Description
 This library allows to perform rotations in the right hand coordinate system. The index finger points to positive X axis, the middle finger points to positive Y axis and the thumb points to positive Z axis. **It is important to understand.**

@@ -26,7 +26,7 @@ class CppMathRecipe(ConanFile):
 
     @property
     def _min_cppstd(self):
-        return '20'
+        return '14'
 
     def requirements(self):
         if self.options.tests:

@@ -1,6 +1,7 @@
 #include <cpp-math/cpp_math.h>
 
 // #include <iostream>
+#include <memory>
 #include <limits>
 #include <stdexcept>
 #include <cstdio>  // For size_t
@@ -59,7 +60,7 @@ namespace
     throw std::runtime_error("Unknown heli angle: " + std::to_string(static_cast<int>(angle)));
   }
 
-  std::optional<Vector3d> try_to_rotate(
+  std::unique_ptr<Vector3d> try_to_rotate(
     Vector3d const& v,
     HeliAngles const& angles,
     std::vector<HeliAngle> const& angles_to_rotate
@@ -74,26 +75,37 @@ namespace
       }
       if(not can_rotate(result, angle)) {
         // std::cout << "Can't rotate " << angleToString(angle) << std::endl;
-        return std::nullopt;
+        return {};
       }
       result = rotateVector(result, heliAngleToRotationAxis(angle), getAngle(angles, angle));
     }
 
-    return result;
+    return std::make_unique<Vector3d>(result);
   }
 
-  std::optional<Vector3d> try_to_rotate(Vector3d const& v, HeliAngles const& angles)
-  {
-    std::vector<std::vector<HeliAngle>> permutations;
-    std::vector<HeliAngle> all_angles = {HeliAngle::Roll, HeliAngle::Pitch, HeliAngle::Yaw};
 
-    do {
-      if(auto result = try_to_rotate(v, angles, all_angles); result) {
+  std::vector<std::vector<HeliAngle>> get_angles_permutations()
+  {
+    return {
+      {HeliAngle::Roll, HeliAngle::Pitch, HeliAngle::Yaw},
+      {HeliAngle::Roll, HeliAngle::Yaw, HeliAngle::Pitch},
+      {HeliAngle::Yaw, HeliAngle::Roll, HeliAngle::Pitch},
+      {HeliAngle::Yaw, HeliAngle::Pitch, HeliAngle::Roll},
+      {HeliAngle::Pitch, HeliAngle::Roll, HeliAngle::Yaw},
+      {HeliAngle::Pitch, HeliAngle::Yaw, HeliAngle::Roll},
+    };
+  } 
+
+  std::unique_ptr<Vector3d> try_to_rotate(Vector3d const& v, HeliAngles const& angles)
+  {
+    for (auto angles_triplet : get_angles_permutations()) {
+      auto result = try_to_rotate(v, angles, angles_triplet);
+      if(result) {
         return result;
       }
-    } while(std::next_permutation(all_angles.begin(), all_angles.end()));
+    }
 
-    return std::nullopt;
+    return {};
   }
 
 }  // namespace
@@ -107,7 +119,7 @@ namespace cpp_math
     CameraAngles camera_angles
   )
   {
-    Vector3d normalizedVector = Vector3d(1, 0, 0);
+    Vector3d normalizedVector = Vector3d{1, 0, 0};
     angles.pitch += camera_angles.pitch;
     angles.yaw += camera_angles.yaw;
     // std::cout << "Result heli angles: " << angles << std::endl;
@@ -178,17 +190,17 @@ namespace cpp_math
 
   Vector3d addVectors(Vector3d const& v1, Vector3d const& v2)
   {
-    return Vector3d(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z);
+    return Vector3d{v1.x + v2.x, v1.y + v2.y, v1.z + v2.z};
   }
 
   Vector3d subtractVectors(Vector3d const& v1, Vector3d const& v2)
   {
-    return Vector3d(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z);
+    return Vector3d{v1.x - v2.x, v1.y - v2.y, v1.z - v2.z};
   }
 
   Vector3d multiplyVectorByScalar(Vector3d const& v, double scalar)
   {
-    return Vector3d(v.x * scalar, v.y * scalar, v.z * scalar);
+    return Vector3d{v.x * scalar, v.y * scalar, v.z * scalar};
   }
 
   Vector3d multiplyMatrixByVector(Matrix3d const& matrix, Vector3d const& v)
