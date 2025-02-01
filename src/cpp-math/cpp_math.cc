@@ -7,18 +7,40 @@
 
 namespace cpp_math
 {
-  Vector3d rotateVector(Vector3d const& v, Axis axis, double angle) {
+  Vector3d rotateVector(Vector3d const& v, Axis axis, double angle)
+  {
     auto radians = degreesToRadians(angle);
     auto rotation_matrix = calculateRotationMatrix(axis, radians);
   }
 
-  Matrix3d calculateRotationMatrix(Axis axis, double radians) {
-    
+  Matrix3d calculateRotationMatrix(Axis axis, double radians)
+  {
+    // clang-format off
+    switch(axis) {
+      case Axis::Z:
+        return {
+                {cos(radians), -sin(radians), 0             },
+                {sin(radians),  cos(radians), 0             }, 
+                {0,             0,            1             }
+               };
+      case Axis::X:
+        return {
+                {1,             0,             0            }, 
+                {0,             cos(radians), -sin(radians) }, 
+                {0,             sin(radians),  cos(radians) }
+               };
+      case Axis::Y:
+        return {
+                {cos(radians),  0,             sin(radians) }, 
+                {0,             1,             0            }, 
+                {-sin(radians), 0,             cos(radians) }
+               };
+    }
+    // clang-format on
+    throw std::runtime_error("Invalid axis");
   }
 
-  double degreesToRadians(double degrees) {
-    return degrees * M_PI / 180.0;
-  }
+  double degreesToRadians(double degrees) { return degrees * M_PI / 180.0; }
 
   Vector3d addVectors(Vector3d const& v1, Vector3d const& v2)
   {
