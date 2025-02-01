@@ -1,6 +1,7 @@
 #include <cpp-math/cpp_math.h>
 
 // #include <iostream>
+#include <limits>
 #include <stdexcept>
 #include <cstdio>  // For size_t
 #include <cmath>
@@ -32,23 +33,28 @@ namespace
   [[maybe_unused]] std::string anglesToString(std::vector<HeliAngle> const& angles)
   {
     std::string result = "{";
-    for (auto angle : angles) {
+    for(auto angle : angles) {
       result += angleToString(angle) + ", ";
     }
     result += "}";
     return result;
   }
 
+  bool close_to_zero(double value)
+  {
+    return std::abs(value) < std::numeric_limits<double>::epsilon() * 100;
+  }
+
   bool can_rotate(Vector3d const& v, HeliAngle const& angle)
   {
     if(angle == HeliAngle::Yaw) {
-      return v.x != 0 or v.y != 0;
+      return not close_to_zero(v.x) or not close_to_zero(v.y);
     }
     else if(angle == HeliAngle::Pitch) {
-      return v.x != 0 or v.z != 0;
+      return not close_to_zero(v.x) or not close_to_zero(v.z);
     }
     else if(angle == HeliAngle::Roll) {
-      return v.z != 0 or v.y != 0;
+      return not close_to_zero(v.z) or not close_to_zero(v.y);
     }
     throw std::runtime_error("Unknown heli angle: " + std::to_string(static_cast<int>(angle)));
   }
@@ -63,6 +69,9 @@ namespace
     // std::cout << "Trying rotation: " << anglesToString(angles_to_rotate) << std::endl;
 
     for(auto angle : angles_to_rotate) {
+      if (close_to_zero(getAngle(angles, angle))) {
+        continue;
+      }
       if(not can_rotate(result, angle)) {
         // std::cout << "Can't rotate " << angleToString(angle) << std::endl;
         return std::nullopt;
@@ -91,7 +100,7 @@ namespace
 
 namespace cpp_math
 {
-  std::optional<Vector3d> calculatePointByDistanceAndAngles(
+  Vector3d calculatePointByDistanceAndAngles(
     double distance,
     Vector3d initial_position,
     HeliAngles angles,
@@ -115,7 +124,7 @@ namespace cpp_math
       return v;
     }
     auto result = try_to_rotate(v, angles);
-    if (not result) {
+    if(not result) {
       return v;
     }
     return *result;

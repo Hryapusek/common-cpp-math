@@ -41,9 +41,8 @@ TEST_CASE("calculatePointByDistanceAndAngles")
     INFO("Heli angles are " << heli_angles);
     INFO("Camera angles are " << camera_angles);
     INFO("Point expected is " << expected);
-    REQUIRE(result.has_value());
-    INFO("Point after rotation is " << *result);
-    REQUIRE(vectors_almost_equal(*result, expected, 0.0001));
+    INFO("Point after rotation is " << result);
+    REQUIRE(vectors_almost_equal(result, expected, 0.0001));
   }
 
   SECTION("Heli is 45 pitch and camera is 45 pitch")
@@ -70,9 +69,8 @@ TEST_CASE("calculatePointByDistanceAndAngles")
     INFO("Heli angles are " << heli_angles);
     INFO("Camera angles are " << camera_angles);
     INFO("Point expected is " << expected);
-    REQUIRE(result.has_value());
-    INFO("Point after rotation is " << *result);
-    REQUIRE(vectors_almost_equal(*result, expected, 0.0001));
+    INFO("Point after rotation is " << result);
+    REQUIRE(vectors_almost_equal(result, expected, 0.0001));
   }
 
   SECTION("Heli is 90 yaw and camera is 45 pitch")
@@ -103,9 +101,8 @@ TEST_CASE("calculatePointByDistanceAndAngles")
     INFO("Heli angles are " << heli_angles);
     INFO("Camera angles are " << camera_angles);
     INFO("Point expected is " << expected);
-    REQUIRE(result.has_value());
-    INFO("Point after rotation is " << *result);
-    REQUIRE(vectors_almost_equal(*result, expected, 0.0001));
+    INFO("Point after rotation is " << result);
+    REQUIRE(vectors_almost_equal(result, expected, 0.0001));
   }
 
   SECTION("Heli looks 45 yaw and camera is 45 pitch")
@@ -135,9 +132,8 @@ TEST_CASE("calculatePointByDistanceAndAngles")
     INFO("Heli angles are " << heli_angles);
     INFO("Camera angles are " << camera_angles);
     INFO("Point expected is " << expected);
-    REQUIRE(result.has_value());
-    INFO("Point after rotation is " << *result);
-    REQUIRE(vectors_almost_equal(*result, expected, 0.0001));
+    INFO("Point after rotation is " << result);
+    REQUIRE(vectors_almost_equal(result, expected, 0.0001));
   }
 
   SECTION("Heli looks 90 roll and camera is 45 pitch")
@@ -167,9 +163,8 @@ TEST_CASE("calculatePointByDistanceAndAngles")
     INFO("Heli angles are " << heli_angles);
     INFO("Camera angles are " << camera_angles);
     INFO("Point expected is " << expected);
-    REQUIRE(result.has_value());
-    INFO("Point after rotation is " << *result);
-    REQUIRE(vectors_almost_equal(*result, expected, 0.0001));
+    INFO("Point after rotation is " << result);
+    REQUIRE(vectors_almost_equal(result, expected, 0.0001));
   }
 }
 

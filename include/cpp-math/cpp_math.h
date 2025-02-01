@@ -63,14 +63,30 @@ namespace cpp_math
     Z
   };
 
-  std::optional<Vector3d> calculatePointByDistanceAndAngles(
+  /// @brief This function calculates the point by distance from initial_position and angles from heli and camera at the bottom of the heli which has its own two rotation axes
+  /// @param distance Distance to searched point
+  /// @param initial_position Point from which the distance is measured
+  /// @param angles Angles of the heli (read the comment in HeliAngles)
+  /// @param camera_angles Cameras angles
+  /// @return Coordinates of the point
+  Vector3d calculatePointByDistanceAndAngles(
     double distance,
     Vector3d initial_position,
     HeliAngles angles,
     CameraAngles camera_angles
   );
 
+  /**
+   * @brief Rotates vector by angles
+   * @param v Vector to rotate
+   * @param angles Values of angles to rotate
+   * @return Rotated vector
+   * @note This function takes care about order in which to rotate the vector. 
+   * @note For example if we pass v(1, 0, 0) and angles with roll = 90, pitch = 0, yaw = 45, it will first apply yaw, and only then roll. It is important because if we would apply roll first - we would end up rotating vector around itself which wouldn't reflect any rotation at all. Roll only makes sense after yaw
+   * @note If we pass angles with roll = 0, pitch = 0, yaw = 0, it will return the same vector
+   */
   Vector3d rotateVector(Vector3d const& v, HeliAngles const& angles);
+  
   Vector3d rotateVector(Vector3d const& v, Axis axis, double angle);
 
   Matrix3d calculateRotationMatrix(Axis axis, double radians);
