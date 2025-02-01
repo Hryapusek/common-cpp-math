@@ -82,3 +82,9 @@ HeliAngles {
 }
 ```
 Then camera will counter the angle of the heli and point straight to the forward direction
+
+### calculatePointByDistanceAndAngles
+The main function to calculate the point by distance from initial_position and angles from heli and camera at the bottom of the heli. Please don't forget to convert everything in suitable format
+
+## Other
+See some more examples in [tests](tests/src/test-rotations.cc)

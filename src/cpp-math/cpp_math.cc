@@ -76,7 +76,7 @@ namespace
         // std::cout << "Can't rotate " << angleToString(angle) << std::endl;
         return std::nullopt;
       }
-      result = rotateVector(result, heliAngleToAxis(angle), getAngle(angles, angle));
+      result = rotateVector(result, heliAngleToRotationAxis(angle), getAngle(angles, angle));
     }
 
     return result;
@@ -130,7 +130,7 @@ namespace cpp_math
     return *result;
   }
 
-  Axis heliAngleToAxis(HeliAngle angle)
+  Axis heliAngleToRotationAxis(HeliAngle angle)
   {
     switch(angle) {
       case HeliAngle::Roll: return Axis::X;

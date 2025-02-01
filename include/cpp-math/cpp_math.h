@@ -86,12 +86,12 @@ namespace cpp_math
    * @note If we pass angles with roll = 0, pitch = 0, yaw = 0, it will return the same vector
    */
   Vector3d rotateVector(Vector3d const& v, HeliAngles const& angles);
-  
+
   Vector3d rotateVector(Vector3d const& v, Axis axis, double angle);
 
   Matrix3d calculateRotationMatrix(Axis axis, double radians);
 
-  Axis heliAngleToAxis(HeliAngle angle);
+  Axis heliAngleToRotationAxis(HeliAngle angle);
 
   double degreesToRadians(double degrees);
 
