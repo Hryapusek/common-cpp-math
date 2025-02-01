@@ -9,6 +9,7 @@
 
 #include <vector>
 #include <ostream>
+#include <optional>
 
 namespace cpp_math
 {
@@ -43,10 +44,9 @@ namespace cpp_math
 
   struct CameraAngles
   {
-    // These should be in degrees (0-360)
-    // Since we use a right-handed coordinate system
-    // positive values are clockwise
-    double pitch, yaw;
+    // These should be in degrees [-inf, inf]
+    // Read the comment in HeliAngles
+    double yaw, pitch;
   };
 
   enum class HeliAngle
@@ -63,8 +63,13 @@ namespace cpp_math
     Z
   };
 
-  double calculatePointByDistanceAndAngles(double distance, HeliAngles angles, CameraAngles camera_angles);
-  
+  std::optional<Vector3d> calculatePointByDistanceAndAngles(
+    double distance,
+    Vector3d initial_position,
+    HeliAngles angles,
+    CameraAngles camera_angles
+  );
+
   Vector3d rotateVector(Vector3d const& v, HeliAngles const& angles);
   Vector3d rotateVector(Vector3d const& v, Axis axis, double angle);
 
@@ -78,9 +83,11 @@ namespace cpp_math
   Vector3d subtractVectors(Vector3d const& v1, Vector3d const& v2);
   Vector3d multiplyVectorByScalar(Vector3d const& v, double scalar);
   Vector3d multiplyMatrixByVector(Matrix3d const& matrix, Vector3d const& v);
+  Matrix3d multiplyMatrices(Matrix3d const& m1, Matrix3d const& m2);
 
   std::ostream& operator<<(std::ostream& os, Vector3d const& v);
   std::ostream& operator<<(std::ostream& os, Matrix3d const& matrix);
   std::ostream& operator<<(std::ostream& os, HeliAngles const& angles);
+  std::ostream& operator<<(std::ostream& os, CameraAngles const& angles);
 
 }  // namespace cpp_math
