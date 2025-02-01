@@ -15,6 +15,90 @@ bool vectors_almost_equal(
       && std::abs(v1.z - v2.z) < epsilon;
 }
 
+TEST_CASE("Heli rotations")
+{
+  auto x_vector = cpp_math::Vector3d(1, 0, 0);
+  SECTION("Heli looks back")
+  {
+    auto expected = cpp_math::Vector3d(-1, 0, 0);
+    auto heli_angles = cpp_math::HeliAngles {
+      .yaw = 180,
+      .pitch = 0,
+      .roll = 0,
+    };
+    auto result = cpp_math::rotateVector(x_vector, heli_angles);
+    INFO("Souce vector is " << x_vector);
+    INFO("Heli angles are " << heli_angles);
+    INFO("Vector after rotation is " << result);
+    INFO("Vector expected is " << expected);
+    REQUIRE(vectors_almost_equal(result, expected, 0.0001));
+  }
+
+  SECTION("Heli looks left")
+  {
+    auto expected = cpp_math::Vector3d(0, 1, 0);
+    auto heli_angles = cpp_math::HeliAngles {
+      .yaw = 90,
+      .pitch = 0,
+      .roll = 0,
+    };
+    auto result = cpp_math::rotateVector(x_vector, heli_angles);
+    INFO("Souce vector is " << x_vector);
+    INFO("Heli angles are " << heli_angles);
+    INFO("Vector after rotation is " << result);
+    INFO("Vector expected is " << expected);
+    REQUIRE(vectors_almost_equal(result, expected, 0.0001));
+  }
+
+  SECTION("Heli looks right")
+  {
+    auto expected = cpp_math::Vector3d(0, -1, 0);
+    auto heli_angles = cpp_math::HeliAngles {
+      .yaw = -90,
+      .pitch = 0,
+      .roll = 0,
+    };
+    auto result = cpp_math::rotateVector(x_vector, heli_angles);
+    INFO("Souce vector is " << x_vector);
+    INFO("Heli angles are " << heli_angles);
+    INFO("Vector after rotation is " << result);
+    INFO("Vector expected is " << expected);
+    REQUIRE(vectors_almost_equal(result, expected, 0.0001));
+  }
+
+  SECTION("Heli looks up")
+  {
+    auto expected = cpp_math::Vector3d(0, 0, 1);
+    auto heli_angles = cpp_math::HeliAngles {
+      .yaw = 0,
+      .pitch = -90,
+      .roll = 0,
+    };
+    auto result = cpp_math::rotateVector(x_vector, heli_angles);
+    INFO("Souce vector is " << x_vector);
+    INFO("Heli angles are " << heli_angles);
+    INFO("Vector after rotation is " << result);
+    INFO("Vector expected is " << expected);
+    REQUIRE(vectors_almost_equal(result, expected, 0.0001));
+  }
+
+  SECTION("Heli looks 45 yaw, -45 pitch")
+  {
+    auto expected = cpp_math::Vector3d(0.5, 0.5, std::sqrt(2) / 2);
+    auto heli_angles = cpp_math::HeliAngles {
+      .yaw = 45,
+      .pitch = -45,
+      .roll = 0,
+    };
+    auto result = cpp_math::rotateVector(x_vector, heli_angles);
+    INFO("Souce vector is " << x_vector);
+    INFO("Heli angles are " << heli_angles);
+    INFO("Vector after rotation is " << result);
+    INFO("Vector expected is " << expected);
+    REQUIRE(vectors_almost_equal(result, expected, 0.0001));
+  }
+}
+
 TEST_CASE("Basic rotations")
 {
   SECTION("Rotations along the z axis")

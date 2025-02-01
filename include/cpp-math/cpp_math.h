@@ -22,23 +22,23 @@ namespace cpp_math
 
   struct HeliAngles
   {
-    // This should be in degrees [-180, 180]
+    // This should be in degrees [-inf, inf]
     // Since we use a right-handed coordinate system
     // positive values are counter clockwise if we see
     // towards the thumb finger (Z axis)
-    uint16_t yaw;
+    double yaw;
 
-    // This should be in degrees [-180, 180]
+    // This should be in degrees [-inf, inf]
     // Since we use a right-handed coordinate system
     // positive values are counter clockwise if we see
     // towards the middle finger
-    uint16_t pitch;
+    double pitch;
 
-    // This should be in degrees [-180, 180]
+    // This should be in degrees [-inf, inf]
     // Since we use a right-handed coordinate system
     // positive values are counter clockwise if we see
     // towards the index finger
-    uint16_t roll;
+    double roll;
   };
 
   struct CameraAngles
@@ -65,7 +65,7 @@ namespace cpp_math
 
   double calculatePointByDistanceAndAngles(double distance, HeliAngles angles, CameraAngles camera_angles);
   
-  Vector3d rotateVector(Vector3d const& v, HeliAngles angles);
+  Vector3d rotateVector(Vector3d const& v, HeliAngles const& angles);
   Vector3d rotateVector(Vector3d const& v, Axis axis, double angle);
 
   Matrix3d calculateRotationMatrix(Axis axis, double radians);
@@ -81,5 +81,6 @@ namespace cpp_math
 
   std::ostream& operator<<(std::ostream& os, Vector3d const& v);
   std::ostream& operator<<(std::ostream& os, Matrix3d const& matrix);
+  std::ostream& operator<<(std::ostream& os, HeliAngles const& angles);
 
 }  // namespace cpp_math

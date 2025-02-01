@@ -8,11 +8,38 @@
 
 namespace cpp_math
 {
+  Vector3d rotateVector(Vector3d const& v, HeliAngles const& angles)
+  {
+    auto result = v;
+    if(angles.roll == 0 && angles.pitch == 0 && angles.yaw == 0) {
+      return result;
+    }
+    if(angles.roll != 0) {
+      result = rotateVector(result, heliAngleToAxis(HeliAngle::Roll), angles.roll);
+    }
+    if(angles.pitch != 0) {
+      result = rotateVector(result, heliAngleToAxis(HeliAngle::Pitch), angles.pitch);
+    }
+    if(angles.yaw != 0) {
+      result = rotateVector(result, heliAngleToAxis(HeliAngle::Yaw), angles.yaw);
+    }
+    return result;
+  }
+
+  Axis heliAngleToAxis(HeliAngle angle)
+  {
+    switch(angle) {
+      case HeliAngle::Roll: return Axis::X;
+      case HeliAngle::Pitch: return Axis::Y;
+      case HeliAngle::Yaw: return Axis::Z;
+    }
+    throw std::runtime_error("Unknown heli angle: " + std::to_string(static_cast<int>(angle)));
+  }
+
   Vector3d rotateVector(Vector3d const& v, Axis axis, double angle)
   {
     auto radians = degreesToRadians(angle);
     auto rotation_matrix = calculateRotationMatrix(axis, radians);
-    std::cout << "Rotation matrix: " << rotation_matrix << std::endl;
     return multiplyMatrixByVector(rotation_matrix, v);
   }
 
@@ -62,7 +89,7 @@ namespace cpp_math
 
   Vector3d multiplyMatrixByVector(Matrix3d const& matrix, Vector3d const& v)
   {
-    if (matrix.size() != 3 || matrix[0].size() != 3) {
+    if(matrix.size() != 3 || matrix[0].size() != 3) {
       throw std::runtime_error("Matrix must be 3x3");
     }
 
@@ -82,8 +109,15 @@ namespace cpp_math
   std::ostream& operator<<(std::ostream& os, Matrix3d const& matrix)
   {
     for(size_t row = 0; row < matrix.size(); ++row) {
-      os << "(" << matrix[row][0] << ", " << matrix[row][1] << ", " << matrix[row][2] << ")" << std::endl;
+      os << "(" << matrix[row][0] << ", " << matrix[row][1] << ", " << matrix[row][2] << ")"
+         << std::endl;
     }
     return os;
   }
+
+  std::ostream& operator<<(std::ostream& os, HeliAngles const& angles)
+  {
+    return os << "Roll: " << angles.roll << ", Pitch: " << angles.pitch << ", Yaw: " << angles.yaw;
+  }
+
 }  // namespace cpp_math
