@@ -8,6 +8,7 @@
  */
 
 #include <vector>
+#include <ostream>
 
 namespace cpp_math
 {
@@ -77,5 +78,8 @@ namespace cpp_math
   Vector3d subtractVectors(Vector3d const& v1, Vector3d const& v2);
   Vector3d multiplyVectorByScalar(Vector3d const& v, double scalar);
   Vector3d multiplyMatrixByVector(Matrix3d const& matrix, Vector3d const& v);
+
+  std::ostream& operator<<(std::ostream& os, Vector3d const& v);
+  std::ostream& operator<<(std::ostream& os, Matrix3d const& matrix);
 
 }  // namespace cpp_math

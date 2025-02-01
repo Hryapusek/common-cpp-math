@@ -1,4 +1,5 @@
 
+#include <iostream>
 #include <stdexcept>
 #include <cstdio>  // For size_t
 #include <cmath>
@@ -11,6 +12,8 @@ namespace cpp_math
   {
     auto radians = degreesToRadians(angle);
     auto rotation_matrix = calculateRotationMatrix(axis, radians);
+    std::cout << "Rotation matrix: " << rotation_matrix << std::endl;
+    return multiplyMatrixByVector(rotation_matrix, v);
   }
 
   Matrix3d calculateRotationMatrix(Axis axis, double radians)
@@ -20,7 +23,7 @@ namespace cpp_math
       case Axis::Z:
         return {
                 {cos(radians), -sin(radians), 0             },
-                {sin(radians),  cos(radians), 0             }, 
+                {sin(radians),  cos(radians), 0             },
                 {0,             0,            1             }
                };
       case Axis::X:
@@ -59,15 +62,28 @@ namespace cpp_math
 
   Vector3d multiplyMatrixByVector(Matrix3d const& matrix, Vector3d const& v)
   {
-    if(matrix.size() != 3 || matrix[0].size() != 3) {
+    if (matrix.size() != 3 || matrix[0].size() != 3) {
       throw std::runtime_error("Matrix must be 3x3");
     }
+
     Vector3d result;
-    for(size_t row = 0; row < matrix.size(); ++row) {
-      result.x += matrix[row][0] * v.x;
-      result.y += matrix[row][1] * v.y;
-      result.z += matrix[row][2] * v.z;
-    }
+    result.x = matrix[0][0] * v.x + matrix[0][1] * v.y + matrix[0][2] * v.z;
+    result.y = matrix[1][0] * v.x + matrix[1][1] * v.y + matrix[1][2] * v.z;
+    result.z = matrix[2][0] * v.x + matrix[2][1] * v.y + matrix[2][2] * v.z;
+
     return result;
+  }
+
+  std::ostream& operator<<(std::ostream& os, Vector3d const& v)
+  {
+    return os << "(" << v.x << ", " << v.y << ", " << v.z << ")";
+  }
+
+  std::ostream& operator<<(std::ostream& os, Matrix3d const& matrix)
+  {
+    for(size_t row = 0; row < matrix.size(); ++row) {
+      os << "(" << matrix[row][0] << ", " << matrix[row][1] << ", " << matrix[row][2] << ")" << std::endl;
+    }
+    return os;
   }
 }  // namespace cpp_math
