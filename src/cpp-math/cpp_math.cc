@@ -1,117 +1,82 @@
 #include <cpp-math/cpp_math.h>
 
-// #include <iostream>
-#include <memory>
-#include <limits>
-#include <stdexcept>
-#include <cstdio>  // For size_t
 #include <cmath>
+#include <cstdio>  // For size_t
+#include <stdexcept>
 
 namespace
 {
   using namespace cpp_math;
 
-  double getAngle(HeliAngles const& angles, HeliAngle angle)
+  Matrix3d calculateHeliRotationMatrix(HeliAngles const& angles)
   {
-    switch(angle) {
-      case HeliAngle::Yaw: return angles.yaw;
-      case HeliAngle::Pitch: return angles.pitch;
-      case HeliAngle::Roll: return angles.roll;
-    }
-    throw std::runtime_error("Unknown heli angle: " + std::to_string(static_cast<int>(angle)));
+    // Heli/body coordinates -> world coordinates.
+    //
+    // For column vectors:
+    //
+    // world = Rz(yaw) * Ry(pitch) * Rx(roll) * body
+    //
+    // The right-most operation is applied first.
+    // This is the usual intrinsic roll -> pitch -> yaw composition:
+    // roll around heli X,
+    // pitch around heli Y,
+    // yaw around heli Z.
+
+    auto const roll = calculateRotationMatrix(
+      Axis::X,
+      degreesToRadians(angles.roll)
+    );
+
+    auto const pitch = calculateRotationMatrix(
+      Axis::Y,
+      degreesToRadians(angles.pitch)
+    );
+
+    auto const yaw = calculateRotationMatrix(
+      Axis::Z,
+      degreesToRadians(angles.yaw)
+    );
+
+    return multiplyMatrices(
+      yaw,
+      multiplyMatrices(pitch, roll)
+    );
   }
 
-  std::string angleToString(HeliAngle angle)
+  Matrix3d calculateCameraRotationMatrix(CameraAngles const& angles)
   {
-    switch(angle) {
-      case HeliAngle::Yaw: return "yaw";
-      case HeliAngle::Pitch: return "pitch";
-      case HeliAngle::Roll: return "roll";
-    }
-    throw std::runtime_error("Unknown heli angle: " + std::to_string(static_cast<int>(angle)));
-  }
+    // Camera coordinates -> heli/body coordinates.
+    //
+    // Camera has no roll.
+    //
+    // camera yaw:
+    //   rotation around heli/camera Z
+    //
+    // camera pitch:
+    //   rotation around the yawed camera Y
+    //
+    // Therefore:
+    //
+    // body = Rz(yaw) * Ry(pitch) * camera
 
-  [[maybe_unused]] std::string anglesToString(std::vector<HeliAngle> const& angles)
-  {
-    std::string result = "{";
-    for(auto angle : angles) {
-      result += angleToString(angle) + ", ";
-    }
-    result += "}";
-    return result;
-  }
+    auto const pitch = calculateRotationMatrix(
+      Axis::Y,
+      degreesToRadians(angles.pitch)
+    );
 
-  bool close_to_zero(double value)
-  {
-    return std::abs(value) < std::numeric_limits<double>::epsilon() * 100;
-  }
+    auto const yaw = calculateRotationMatrix(
+      Axis::Z,
+      degreesToRadians(angles.yaw)
+    );
 
-  bool can_rotate(Vector3d const& v, HeliAngle const& angle)
-  {
-    if(angle == HeliAngle::Yaw) {
-      return not close_to_zero(v.x) or not close_to_zero(v.y);
-    }
-    else if(angle == HeliAngle::Pitch) {
-      return not close_to_zero(v.x) or not close_to_zero(v.z);
-    }
-    else if(angle == HeliAngle::Roll) {
-      return not close_to_zero(v.z) or not close_to_zero(v.y);
-    }
-    throw std::runtime_error("Unknown heli angle: " + std::to_string(static_cast<int>(angle)));
-  }
-
-  std::unique_ptr<Vector3d> try_to_rotate(
-    Vector3d const& v,
-    HeliAngles const& angles,
-    std::vector<HeliAngle> const& angles_to_rotate
-  )
-  {
-    auto result = v;
-    // std::cout << "Trying rotation: " << anglesToString(angles_to_rotate) << std::endl;
-
-    for(auto angle : angles_to_rotate) {
-      if (close_to_zero(getAngle(angles, angle))) {
-        continue;
-      }
-      if(not can_rotate(result, angle)) {
-        // std::cout << "Can't rotate " << angleToString(angle) << std::endl;
-        return {};
-      }
-      result = rotateVector(result, heliAngleToRotationAxis(angle), getAngle(angles, angle));
-    }
-
-    return std::make_unique<Vector3d>(result);
-  }
-
-
-  std::vector<std::vector<HeliAngle>> get_angles_permutations()
-  {
-    return {
-      {HeliAngle::Roll, HeliAngle::Pitch, HeliAngle::Yaw},
-      {HeliAngle::Roll, HeliAngle::Yaw, HeliAngle::Pitch},
-      {HeliAngle::Yaw, HeliAngle::Roll, HeliAngle::Pitch},
-      {HeliAngle::Yaw, HeliAngle::Pitch, HeliAngle::Roll},
-      {HeliAngle::Pitch, HeliAngle::Roll, HeliAngle::Yaw},
-      {HeliAngle::Pitch, HeliAngle::Yaw, HeliAngle::Roll},
-    };
-  } 
-
-  std::unique_ptr<Vector3d> try_to_rotate(Vector3d const& v, HeliAngles const& angles)
-  {
-    for (auto angles_triplet : get_angles_permutations()) {
-      auto result = try_to_rotate(v, angles, angles_triplet);
-      if(result) {
-        return result;
-      }
-    }
-
-    return {};
+    return multiplyMatrices(yaw, pitch);
   }
 
 }  // namespace
 
 namespace cpp_math
 {
+
   Vector3d calculatePointByDistanceAndAngles(
     double distance,
     Vector3d initial_position,
@@ -119,153 +84,263 @@ namespace cpp_math
     CameraAngles camera_angles
   )
   {
-    Vector3d normalizedVector = Vector3d{1, 0, 0};
-    angles.pitch += camera_angles.pitch;
-    angles.yaw += camera_angles.yaw;
-    // std::cout << "Result heli angles: " << angles << std::endl;
-    auto result = rotateVector(normalizedVector, angles);
-    normalizedVector = result;
-    // std::cout << "Normalized vector: " << normalizedVector << std::endl;
+    // Camera looks along its local +X axis when yaw/pitch are zero.
+    Vector3d const forward {1, 0, 0};
 
-    return addVectors(initial_position, multiplyVectorByScalar(normalizedVector, distance));
+    // Camera frame -> heli/body frame.
+    auto const cameraRotation =
+      calculateCameraRotationMatrix(camera_angles);
+
+    // Heli/body frame -> world frame.
+    auto const heliRotation =
+      calculateHeliRotationMatrix(angles);
+
+    // First rotate camera forward inside the helicopter coordinate system.
+    auto const directionInHeli =
+      multiplyMatrixByVector(cameraRotation, forward);
+
+    // Then rotate the whole helicopter coordinate system into the world.
+    auto const directionInWorld =
+      multiplyMatrixByVector(heliRotation, directionInHeli);
+
+    // directionInWorld is a unit vector because rotation matrices preserve
+    // vector length. Scale it by the target distance and add the origin.
+    auto const offset =
+      multiplyVectorByScalar(directionInWorld, distance);
+
+    return addVectors(initial_position, offset);
   }
 
-  Vector3d rotateVector(Vector3d const& v, HeliAngles const& angles)
+  Vector3d rotateVector(
+    Vector3d const& v,
+    HeliAngles const& angles
+  )
   {
-    if(angles.roll == 0 && angles.pitch == 0 && angles.yaw == 0) {
-      return v;
-    }
-    auto result = try_to_rotate(v, angles);
-    if(not result) {
-      return v;
-    }
-    return *result;
+    auto const rotation =
+      calculateHeliRotationMatrix(angles);
+
+    return multiplyMatrixByVector(rotation, v);
   }
 
   Axis heliAngleToRotationAxis(HeliAngle angle)
   {
     switch(angle) {
-      case HeliAngle::Roll: return Axis::X;
-      case HeliAngle::Pitch: return Axis::Y;
-      case HeliAngle::Yaw: return Axis::Z;
+      case HeliAngle::Roll:
+        return Axis::X;
+
+      case HeliAngle::Pitch:
+        return Axis::Y;
+
+      case HeliAngle::Yaw:
+        return Axis::Z;
     }
-    throw std::runtime_error("Unknown heli angle: " + std::to_string(static_cast<int>(angle)));
+
+    throw std::runtime_error(
+      "Unknown heli angle: "
+      + std::to_string(static_cast<int>(angle))
+    );
   }
 
-  Vector3d rotateVector(Vector3d const& v, Axis axis, double angle)
+  Vector3d rotateVector(
+    Vector3d const& v,
+    Axis axis,
+    double angle
+  )
   {
-    auto radians = degreesToRadians(angle);
-    auto rotation_matrix = calculateRotationMatrix(axis, radians);
-    return multiplyMatrixByVector(rotation_matrix, v);
+    auto const radians = degreesToRadians(angle);
+    auto const rotationMatrix =
+      calculateRotationMatrix(axis, radians);
+
+    return multiplyMatrixByVector(rotationMatrix, v);
   }
 
-  Matrix3d calculateRotationMatrix(Axis axis, double radians)
+  Matrix3d calculateRotationMatrix(
+    Axis axis,
+    double radians
+  )
   {
     // clang-format off
+
     switch(axis) {
       case Axis::Z:
         return {
-                {cos(radians), -sin(radians), 0             },
-                {sin(radians),  cos(radians), 0             },
-                {0,             0,            1             }
-               };
+          { std::cos(radians), -std::sin(radians), 0 },
+          { std::sin(radians),  std::cos(radians), 0 },
+          { 0,                  0,                 1 }
+        };
+
       case Axis::X:
         return {
-                {1,             0,             0            }, 
-                {0,             cos(radians), -sin(radians) }, 
-                {0,             sin(radians),  cos(radians) }
-               };
+          { 1, 0,                  0                 },
+          { 0, std::cos(radians), -std::sin(radians) },
+          { 0, std::sin(radians),  std::cos(radians) }
+        };
+
       case Axis::Y:
         return {
-                {cos(radians),  0,             sin(radians) }, 
-                {0,             1,             0            }, 
-                {-sin(radians), 0,             cos(radians) }
-               };
+          {  std::cos(radians), 0, std::sin(radians) },
+          {  0,                 1, 0                 },
+          { -std::sin(radians), 0, std::cos(radians) }
+        };
     }
+
     // clang-format on
+
     throw std::runtime_error("Invalid axis");
   }
 
-  double degreesToRadians(double degrees) { return degrees * M_PI / 180.0; }
-
-  Vector3d addVectors(Vector3d const& v1, Vector3d const& v2)
+  double degreesToRadians(double degrees)
   {
-    return Vector3d{v1.x + v2.x, v1.y + v2.y, v1.z + v2.z};
+    return degrees * M_PI / 180.0;
   }
 
-  Vector3d subtractVectors(Vector3d const& v1, Vector3d const& v2)
+  Vector3d addVectors(
+    Vector3d const& v1,
+    Vector3d const& v2
+  )
   {
-    return Vector3d{v1.x - v2.x, v1.y - v2.y, v1.z - v2.z};
+    return {
+      v1.x + v2.x,
+      v1.y + v2.y,
+      v1.z + v2.z
+    };
   }
 
-  Vector3d multiplyVectorByScalar(Vector3d const& v, double scalar)
+  Vector3d subtractVectors(
+    Vector3d const& v1,
+    Vector3d const& v2
+  )
   {
-    return Vector3d{v.x * scalar, v.y * scalar, v.z * scalar};
+    return {
+      v1.x - v2.x,
+      v1.y - v2.y,
+      v1.z - v2.z
+    };
   }
 
-  Vector3d multiplyMatrixByVector(Matrix3d const& matrix, Vector3d const& v)
+  Vector3d multiplyVectorByScalar(
+    Vector3d const& v,
+    double scalar
+  )
   {
-    if(matrix.size() != 3 || matrix[0].size() != 3) {
+    return {
+      v.x * scalar,
+      v.y * scalar,
+      v.z * scalar
+    };
+  }
+
+  Vector3d multiplyMatrixByVector(
+    Matrix3d const& matrix,
+    Vector3d const& v
+  )
+  {
+    if(matrix.size() != 3
+       || matrix[0].size() != 3
+       || matrix[1].size() != 3
+       || matrix[2].size() != 3) {
       throw std::runtime_error("Matrix must be 3x3");
     }
 
-    Vector3d result;
-    result.x = matrix[0][0] * v.x + matrix[0][1] * v.y + matrix[0][2] * v.z;
-    result.y = matrix[1][0] * v.x + matrix[1][1] * v.y + matrix[1][2] * v.z;
-    result.z = matrix[2][0] * v.x + matrix[2][1] * v.y + matrix[2][2] * v.z;
+    return {
+      matrix[0][0] * v.x
+        + matrix[0][1] * v.y
+        + matrix[0][2] * v.z,
 
-    return result;
+      matrix[1][0] * v.x
+        + matrix[1][1] * v.y
+        + matrix[1][2] * v.z,
+
+      matrix[2][0] * v.x
+        + matrix[2][1] * v.y
+        + matrix[2][2] * v.z
+    };
   }
 
-  Matrix3d multiplyMatrices(Matrix3d const& m1, Matrix3d const& m2)
+  Matrix3d multiplyMatrices(
+    Matrix3d const& m1,
+    Matrix3d const& m2
+  )
   {
-    if(m1.size() != 3 || m1[0].size() != 3 || m2.size() != 3 || m2[0].size() != 3) {
+    if(m1.size() != 3
+       || m1[0].size() != 3
+       || m1[1].size() != 3
+       || m1[2].size() != 3
+       || m2.size() != 3
+       || m2[0].size() != 3
+       || m2[1].size() != 3
+       || m2[2].size() != 3) {
       throw std::runtime_error("Matrices must be 3x3");
     }
 
-    // std::cout << "Multiplying matrices\n";
-    // std::cout << m1 << "\n";
-    // std::cout << m2 << "\n";
+    Matrix3d result {
+      {0, 0, 0},
+      {0, 0, 0},
+      {0, 0, 0}
+    };
 
-    Matrix3d result = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
     for(size_t row = 0; row < 3; ++row) {
       for(size_t col = 0; col < 3; ++col) {
-        double value = 0;
         for(size_t i = 0; i < 3; ++i) {
-          value += m1[row][i] * m2[i][col];
+          result[row][col] +=
+            m1[row][i] * m2[i][col];
         }
-        result[row][col] = value;
       }
     }
-
-    // std::cout << "Result:\n";
-    // std::cout << result << "\n";
 
     return result;
   }
 
-  std::ostream& operator<<(std::ostream& os, Vector3d const& v)
+  std::ostream& operator<<(
+    std::ostream& os,
+    Vector3d const& v
+  )
   {
-    return os << "(" << v.x << ", " << v.y << ", " << v.z << ")";
+    return os
+      << "("
+      << v.x << ", "
+      << v.y << ", "
+      << v.z
+      << ")";
   }
 
-  std::ostream& operator<<(std::ostream& os, Matrix3d const& matrix)
+  std::ostream& operator<<(
+    std::ostream& os,
+    Matrix3d const& matrix
+  )
   {
     for(size_t row = 0; row < matrix.size(); ++row) {
-      os << "(" << matrix[row][0] << ", " << matrix[row][1] << ", " << matrix[row][2] << ")"
-         << std::endl;
+      os
+        << "("
+        << matrix[row][0] << ", "
+        << matrix[row][1] << ", "
+        << matrix[row][2]
+        << ")"
+        << std::endl;
     }
+
     return os;
   }
 
-  std::ostream& operator<<(std::ostream& os, HeliAngles const& angles)
+  std::ostream& operator<<(
+    std::ostream& os,
+    HeliAngles const& angles
+  )
   {
-    return os << "Roll: " << angles.roll << ", Pitch: " << angles.pitch << ", Yaw: " << angles.yaw;
+    return os
+      << "Roll: " << angles.roll
+      << ", Pitch: " << angles.pitch
+      << ", Yaw: " << angles.yaw;
   }
 
-  std::ostream& operator<<(std::ostream& os, CameraAngles const& angles)
+  std::ostream& operator<<(
+    std::ostream& os,
+    CameraAngles const& angles
+  )
   {
-    return os << "Pitch: " << angles.pitch << ", Yaw: " << angles.yaw;
+    return os
+      << "Pitch: " << angles.pitch
+      << ", Yaw: " << angles.yaw;
   }
 
 }  // namespace cpp_math

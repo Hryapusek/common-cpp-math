@@ -1,15 +1,13 @@
 #define CATCH_CONFIG_MAIN
-#include <catch2/catch.hpp>
+#include <catch2/catch_all.hpp>
 
 #include <cpp-math/cpp_math.h>
 
 using cpp_math::operator<<;
 
-bool vectors_almost_equal(
-  cpp_math::Vector3d const& v1,
-  cpp_math::Vector3d const& v2,
-  double epsilon
-)
+bool vectors_almost_equal(cpp_math::Vector3d const& v1,
+                          cpp_math::Vector3d const& v2,
+                          double epsilon)
 {
   return std::abs(v1.x - v2.x) < epsilon && std::abs(v1.y - v2.y) < epsilon
       && std::abs(v1.z - v2.z) < epsilon;
@@ -32,12 +30,10 @@ TEST_CASE("calculatePointByDistanceAndAngles")
     };
     auto distance = 1;
     auto expected = cpp_math::Vector3d(distance, 0, 0);
-    auto result = cpp_math::calculatePointByDistanceAndAngles(
-      distance,
-      initial_point,
-      heli_angles,
-      camera_angles
-    );
+    auto result = cpp_math::calculatePointByDistanceAndAngles(distance,
+                                                              initial_point,
+                                                              heli_angles,
+                                                              camera_angles);
     INFO("Heli angles are " << heli_angles);
     INFO("Camera angles are " << camera_angles);
     INFO("Point expected is " << expected);
@@ -60,12 +56,10 @@ TEST_CASE("calculatePointByDistanceAndAngles")
     };
     auto distance = 1;
     auto expected = cpp_math::Vector3d(0, 0, -distance);
-    auto result = cpp_math::calculatePointByDistanceAndAngles(
-      distance,
-      initial_point,
-      heli_angles,
-      camera_angles
-    );
+    auto result = cpp_math::calculatePointByDistanceAndAngles(distance,
+                                                              initial_point,
+                                                              heli_angles,
+                                                              camera_angles);
     INFO("Heli angles are " << heli_angles);
     INFO("Camera angles are " << camera_angles);
     INFO("Point expected is " << expected);
@@ -87,17 +81,13 @@ TEST_CASE("calculatePointByDistanceAndAngles")
       .pitch = 45,
     };
     auto distance = 1;
-    auto expected = cpp_math::Vector3d(
-      0,
-      std::cos(cpp_math::degreesToRadians(45)) * distance,
-      -std::cos(cpp_math::degreesToRadians(45)) * distance
-    );
-    auto result = cpp_math::calculatePointByDistanceAndAngles(
-      distance,
-      initial_point,
-      heli_angles,
-      camera_angles
-    );
+    auto expected = cpp_math::Vector3d(0,
+                                       std::cos(cpp_math::degreesToRadians(45)) * distance,
+                                       -std::cos(cpp_math::degreesToRadians(45)) * distance);
+    auto result = cpp_math::calculatePointByDistanceAndAngles(distance,
+                                                              initial_point,
+                                                              heli_angles,
+                                                              camera_angles);
     INFO("Heli angles are " << heli_angles);
     INFO("Camera angles are " << camera_angles);
     INFO("Point expected is " << expected);
@@ -119,16 +109,14 @@ TEST_CASE("calculatePointByDistanceAndAngles")
       .pitch = 45,
     };
     auto distance = 2;
-    auto expected = cpp_math::multiplyVectorByScalar(
-      cpp_math::Vector3d(0.5, 0.5, -std::sqrt(2) / 2),
-      distance
-    );
-    auto result = cpp_math::calculatePointByDistanceAndAngles(
-      distance,
-      initial_point,
-      heli_angles,
-      camera_angles
-    );
+    auto expected = cpp_math::multiplyVectorByScalar(cpp_math::Vector3d(0.5,
+                                                                        0.5,
+                                                                        -std::sqrt(2) / 2),
+                                                     distance);
+    auto result = cpp_math::calculatePointByDistanceAndAngles(distance,
+                                                              initial_point,
+                                                              heli_angles,
+                                                              camera_angles);
     INFO("Heli angles are " << heli_angles);
     INFO("Camera angles are " << camera_angles);
     INFO("Point expected is " << expected);
@@ -150,16 +138,11 @@ TEST_CASE("calculatePointByDistanceAndAngles")
       .pitch = 45,
     };
     auto distance = 2;
-    auto expected = cpp_math::multiplyVectorByScalar(
-      cpp_math::Vector3d(std::sqrt(2) / 2, std::sqrt(2) / 2, 0),
-      distance
-    );
-    auto result = cpp_math::calculatePointByDistanceAndAngles(
-      distance,
-      initial_point,
-      heli_angles,
-      camera_angles
-    );
+    auto expected = cpp_math::Vector3d(std::sqrt(2), std::sqrt(2), 0);
+    auto result = cpp_math::calculatePointByDistanceAndAngles(distance,
+                                                              initial_point,
+                                                              heli_angles,
+                                                              camera_angles);
     INFO("Heli angles are " << heli_angles);
     INFO("Camera angles are " << camera_angles);
     INFO("Point expected is " << expected);
@@ -320,7 +303,7 @@ TEST_CASE("Heli rotations")
   SECTION("Heli looks 90 roll and 45 pitch")
   {
     auto source_vector = cpp_math::Vector3d(1, 0, 0);
-    auto expected = cpp_math::Vector3d(std::sqrt(2) / 2, std::sqrt(2) / 2, 0);
+    auto expected = cpp_math::Vector3d(std::sqrt(2) / 2, 0, -std::sqrt(2) / 2);
     auto heli_angles = cpp_math::HeliAngles {
       .yaw = 0,
       .pitch = 45,

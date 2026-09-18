@@ -10,8 +10,7 @@ project(cpp-math
 
 option(BUILD_${PROJECT_NAME}_TEST_EXECUTABLE "Build test executable?" OFF)
 
-find_package(QT NAMES Qt5 COMPONENTS Widgets Core Qml QuickControls2)
-find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets Core Qml QuickControls2)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 if (BUILD_${PROJECT_NAME}_TEST_EXECUTABLE)
   find_package(Catch2 REQUIRED)
